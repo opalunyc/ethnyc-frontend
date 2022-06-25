@@ -9,6 +9,23 @@ const fastDispersement = [...R.repeat(0, 7), ...R.repeat(0, 54).map((_, x) => Ma
 const mediumDispersement = [...R.repeat(0, 13), ...R.repeat(0, 108).map((_, x) => Math.pow((x+1)/108, 3))];
 const slowDispersement = [...R.repeat(0, 19), ...R.repeat(0, 162).map((_, x) => Math.pow((x+1)/162, 3))];
 
+const connectWalletHandler = async () => {
+  const { ethereum } = window;
+
+  if (!ethereum) {
+    alert("Please install Metamask!");
+  }
+
+  try {
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts'});
+    console.log("Found an account! Address: ", accounts[0]);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+connectWalletHandler();
+
 const DispersementSchedule = ({value, onChange}) => {
   const dispersement = value === "fast" ? fastDispersement : ((value === "medium") ? mediumDispersement : slowDispersement);
   const dispersementData = dispersement.map((x, mo) => ({x: mo/12, y: x * ethInAccount }));
