@@ -8,12 +8,9 @@ import * as R from 'ramda';
 import React, { useState } from 'react';
 
 const ethInAccount = 1500;
-const fastDispersement = [...R.repeat(0, 7), ...R.repeat(0, 54).map((_, x) => Math.pow((x+1)/54, 3))];
-const mediumDispersement = [...R.repeat(0, 13), ...R.repeat(0, 108).map((_, x) => Math.pow((x+1)/108, 3))];
-const slowDispersement = [...R.repeat(0, 19), ...R.repeat(0, 162).map((_, x) => Math.pow((x+1)/162, 3))];
-const fastDispersementStartMonth = 6;
-const mediumDispersementStartMonth = 12;
-const slowDispersementStartMonth = 18;
+const fastDispersement = [...R.repeat(0, 54).map((_, x) => Math.pow((x+1)/54, 3))].map((x, mo) => ({x: (mo+7)/12, y: x * ethInAccount }));
+const mediumDispersement = [...R.repeat(0, 108).map((_, x) => Math.pow((x+1)/108, 3))].map((x, mo) => ({x: (mo+13)/12, y: x * ethInAccount }));
+const slowDispersement = [...R.repeat(0, 162).map((_, x) => Math.pow((x+1)/162, 3))].map((x, mo) => ({x: (mo+19)/12, y: x * ethInAccount }));
 
 const isWalletConnected = async () => {
   try {
@@ -95,35 +92,34 @@ const BeneficiaryPage = () => {
 }
 const DispersementSchedule = ({value, onChange}) => {
   const dispersement = value === "fast" ? fastDispersement : ((value === "medium") ? mediumDispersement : slowDispersement);
-  const dispersementStartMonth = value === "fast" ? fastDispersementStartMonth : ((value === "medium") ? mediumDispersementStartMonth : slowDispersement);
-
-  const dispersementData = dispersement.map((x, mo) => ({x: mo/12, y: x * ethInAccount }));
-  const dispersementStartMonthData = [0.00001, 0.00002].map((val, key) => ({ x: dispersementStartMonth/12+val, y: key * ethInAccount}));
-
-  console.log(dispersementStartMonthData);
-
+  const years = R.repeat(0, (dispersement[dispersement.length-1].x)).map((_, year) => year);
+  console.log(years);
+  
   return (
     <Card className="Card">
       <Box sx={{ margin: 1 }}>
         <div className="section-title">Dispersement Schedule</div>
         <ToggleButtonGroup value={value} exclusive className="dispersement-speed-selector" onChange={onChange}>
-          <ToggleButton value="fast">
-            Fast Dispersement
+          <ToggleButton value="slow">
+            Slow Dispersement
           </ToggleButton>
           <ToggleButton value="medium">
             Medium Dispersement
           </ToggleButton>
-          <ToggleButton value="slow">
-            Slow Dispersement
+          <ToggleButton value="fast">
+            Fast Dispersement
+          </ToggleButton>
+          <ToggleButton value="instant" disabled>
+            Instant Dispersement
           </ToggleButton>
         </ToggleButtonGroup>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart width={600} height={300} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
             <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-            <XAxis dataKey="x" type="time" scale="linear" name="years" unit=" years" range={[0, dispersementData.length/12]} interval="preserveStartEnd" allowDecimals={false}/>
-            <YAxis yAxisId="qty" dataKey="y" type="number" scale="linear" name="eth" unit=" fdaix" width={100} range={[0, 'dataMax']} interval="preserveStartEnd" allowDecimals={false} />
+            <XAxis dataKey="x" type="number" scale="linear" name="years" unit=" years" range={[0, dispersement.length/12]} allowDecimals={false} ticks={years} />
+            <YAxis yAxisId="qty" dataKey="y" type="number" scale="linear" name="eth" unit=" fdaix" width={100} range={[0, 'dataMax']} allowDecimals={false} />
             <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-            <Scatter yAxisId="qty" name="Dispersement Schedule" data={dispersementData} fill="#8884d8" line/>
+            <Scatter yAxisId="qty" name="Dispersement Schedule" data={dispersement} fill="#8884d8" line/>
           </ScatterChart>
         </ResponsiveContainer>
       </Box>
