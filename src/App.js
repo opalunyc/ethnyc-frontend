@@ -1,4 +1,5 @@
 import './App.css';
+import metamaskFox from './MetaMask_Fox.png';
 import { Box, Button, Card, InputAdornment, TextField, Stack, Tab, Tabs, ToggleButtonGroup, ToggleButton, Tooltip, OutlinedInput} from '@mui/material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { CartesianGrid, XAxis, YAxis, Scatter, ScatterChart, ResponsiveContainer } from 'recharts';
@@ -115,6 +116,41 @@ const WithdrawPage = () => {
 }
 
 
+const Dashboard = () => {
+  const [tabValue, setTabValue] = useState("0");
+  const handleTabChange = (_, newValue) => setTabValue(newValue);
+  const tab = "0";
+  return (
+    <Box className="main-area">
+      <TabContext value={tabValue}>
+        <Box>
+          <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab label="Home" value="0" /> 
+            <Tab label="Beneficiary Info" value="1" /> 
+            <Tab label="Withdraw" value="2"/> 
+          </Tabs>
+        </Box>
+        <TabPanel value="0"><StatusPage /></TabPanel>
+        <TabPanel value="1"><BeneficiaryPage /></TabPanel>
+        <TabPanel value="2"><WithdrawPage /></TabPanel>
+      </TabContext>
+    </Box>
+  );
+};
+
+const LoginToMetamask = () => {
+  return (<Box className="login-main-area">
+    <Box sx={{ margin: 1 }} className="login-header">Login to Dribble Dapp</Box>
+    <Box sx={{ margin: 1 }}>
+      Connect your Metamask wallet to use Dribble Dapp
+    </Box>
+    <Button className="login-button" sx={{backgroundColor: "#f0c07f", margin: 3 }}>
+      <img src={metamaskFox} height="100" width="100" />
+      <Box sx={{ fontSize: 20}}>Login to Metamask</Box>
+    </Button>
+  </Box>);
+};
+
 const App = () => {
   const [tabValue, setTabValue] = useState("0");
   const handleTabChange = (_, newValue) => setTabValue(newValue);
@@ -122,23 +158,10 @@ const App = () => {
   return (
     <div className="App">
       <header>
-        Safe Wallet
+        Dribble Dapp
       </header>
-      <div className="main-area">
-        <TabContext value={tabValue}>
-          <Box>
-            <Tabs value={tabValue} onChange={handleTabChange}>
-              <Tab label="Home" value="0" /> 
-              <Tab label="Beneficiary Info" value="1" /> 
-              <Tab label="Withdraw" value="2"/> 
-            </Tabs>
-          </Box>
-          <TabPanel value={tabValue} value="0"><StatusPage /></TabPanel>
-          <TabPanel value={tabValue} value="1"><BeneficiaryPage /></TabPanel>
-          <TabPanel value={tabValue} value="2"><WithdrawPage /></TabPanel>
-        </TabContext>
-        
-      </div>
+      {/* <LoginToMetamask /> */}
+      <Dashboard />
     </div>
   );
 };

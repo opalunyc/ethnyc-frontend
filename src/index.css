@@ -24,35 +24,3 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
-
-.Card {
-  padding: 8px;
-}
-
-.App {
-  height: 100%;
-  max-width: 800px;
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.border {
-  border: 3px black solid;
-}
-
-.main-area {
-  text-align: left;
-  padding: 10px;
-  background-color: white;
-  border-radius: 10px;
-}
-
-.section-title {
-  font-size: larger;
-  margin-bottom: 8px;
-  margin-top: 12px;
-}
-
-.dispersement-speed-selector {
-  margin-bottom: 8px;
-}
