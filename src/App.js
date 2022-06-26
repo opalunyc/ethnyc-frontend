@@ -156,14 +156,16 @@ class StatusPage extends React.Component {
       <Box className="Card">
         {this.state.lastCheckInDate ? 
           <Box sx={{margin:1}}>
+            <Box className="section-title">Check-in Status</Box>
             <p>Your last check in was at {this.state.lastCheckInDate}.</p>
             <p>You must check in again before {this.state.checkInBy} before dispersement begins.</p>
           </Box> : <Skeleton animation="wave" />}
       </Box>
       <Box className="Card">
         <Box sx={{margin:1}}>
-          <p>This is your wallet address: {this.state.walletAddress ? <>{this.state.walletAddress}</> : <LinearProgress />}</p>
-          <p>Wallet Balance: {this.state.walletBalance != null ? <>{this.state.walletBalance}  fdaix</> : <LinearProgress />}</p>
+          <Box className="section-title">Your Dribble Dapp Info</Box>
+          <p>This is your Dribble Dapp address: {this.state.walletAddress ? <>{this.state.walletAddress}</> : <LinearProgress />}</p>
+          <p>Dribble Dapp Balance: {this.state.walletBalance != null ? <>{this.state.walletBalance}  fdaix</> : <LinearProgress />}</p>
         </Box>
       </Box>
     </Stack>);
