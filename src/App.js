@@ -2,17 +2,21 @@ import './App.css';
 import logo from './logo.png';
 import metamaskFox from './MetaMask_Fox.png';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { purple } from '@mui/material/colors';
 import { Box, Button, Card, InputAdornment, TextField, Stack, Tab, Tabs, ToggleButtonGroup, ToggleButton, Tooltip, OutlinedInput, Skeleton, LinearProgress} from '@mui/material';
-import Typography from "@mui/material/Typography";
 import { Send } from '@mui/icons-material';
 import { TabContext, TabPanel } from '@mui/lab';
 import { CartesianGrid, XAxis, YAxis, Scatter, ScatterChart, ResponsiveContainer } from 'recharts';
 import * as R from 'ramda';
 import React, { useState } from 'react';
-import { dark } from '@mui/material/styles/createPalette';
+import { ethers } from 'ethers';
+import contract from "./contract.json";
+import daiAbi from './daiAbi.json';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const contractAddress = "0xc261c333340f1565e57870b36f79BD5AFA06780d";
+const daiContractAddress = "0x5D8B4C2554aeB7e86F387B4d6c00Ac33499Ed01f";
+const contractAbi = contract.abi;
 
 const theme = createTheme({
   typography: {
@@ -21,25 +25,6 @@ const theme = createTheme({
   
   palette: {
     mode: "dark",
-  //   primary: {
-  //     // light: will be calculated from palette.primary.main,
-  //     main: '#ff4400',
-  //     // dark: will be calculated from palette.primary.main,
-  //     // contrastText: will be calculated to contrast with palette.primary.main
-  //   },
-  //   secondary: {
-  //     light: '#0066ff',
-  //     main: '#0044ff',
-  //     // dark: will be calculated from palette.secondary.main,
-  //     contrastText: '#ffcc00',
-  //   },
-  //   // Used by `getContrastText()` to maximize the contrast between
-  //   // the background and the text.
-  //   contrastThreshold: 3,
-  //   // Used by the functions below to shift a color's luminance by approximately
-  //   // two indexes within its tonal palette.
-  //   // E.g., shift from Red 500 to Red 300 or Red 700.
-  //   tonalOffset: 0.2,
   },
 });
 
@@ -70,7 +55,7 @@ const isWalletConnected = async () => {
     console.log("error: ", error)
   }
   return false;
-}
+};
 
 const connectWallet = async () => {
   const { ethereum } = window;
@@ -88,6 +73,34 @@ const connectWallet = async () => {
   }
 };
 
+const addTokens = async (qty) => {
+  const {ethereum} = window;
+  if (!ethereum) return;
+  const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  const signer = provider.getSigner();
+  const daiContract = new ethers.Contract(
+    daiContractAddress,
+    daiAbi,
+    signer,
+  );
+  const result = await daiContract.transfer(contractAddress, ethers.utils.parseEther(qty));
+};
+
+const seeTokens = async (qty) => {
+  const {ethereum} = window;
+  if (!ethereum) return;
+  const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  const signer = provider.getSigner();
+  const daiContract = new ethers.Contract(
+    daiContractAddress,
+    daiAbi,
+    signer,
+  );
+  const result = (await daiContract.balanceOf(contractAddress)).div(1e9).div(1e9).toString();
+  console.log("dai result", result);
+  return result;
+};
+
 const getWalletAddress = async () => {
   await sleep(10);
   return "0xc994f5ea0ba39494ce839613fffba74279579268"
@@ -99,13 +112,38 @@ const getWalletBalance = async () => {
 };
 
 const getBeneficiaryAddress = async () => {
-  await sleep(10);
-  return "0xb794f5ea0ba39494ce839613fffba74279579268";
+  const {ethereum} = window;
+  if (!ethereum) return "";
+  const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  const signer = provider.getSigner();
+  const ethersContract = new ethers.Contract(
+    contractAddress,
+    contractAbi,
+    signer,
+  );
+
+  console.log("getting beneficiary address...");
+  console.log(ethersContract);
+  const address = await ethersContract.recipient();
+
+  console.log("got address?", address);
+  return address;
 };
 
 const sendBeneficiaryAddress = async (address) => {
-  await sleep(10);
-  return "0xb794f5ea0ba39494ce839613fffba74279579268";
+  const {ethereum} = window;
+  if (!ethereum) return "";
+  const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  const signer = provider.getSigner();
+  const ethersContract = new ethers.Contract(
+    contractAddress,
+    contractAbi,
+    signer,
+  );
+
+  console.log("setting beneficiary address...");
+  const result = await ethersContract.setRecipient(address);
+  console.log("set address?", result);
 }
 
 const getLastCheckInDate = async () => {
@@ -120,12 +158,12 @@ const checkIn = async (address) => {
 
 const getDispersementSchedule = async () => {
   await sleep(10);
-  return "medium";
+  return "MEDIUM";
 };
 
 const sendDispersementSchedule = async (plan) => {
   await sleep(10);
-  return "medium";
+  return "MEDIUM";
 }
 
 const sendWithdrawal = async (address, amount) => {
@@ -142,6 +180,9 @@ class StatusPage extends React.Component {
       walletAddress: null,
       walletBalance: null,
       checkInBy: "[UNKNOWN DATE]",
+      sendQty: 0,
+      tokenBalanceStatus: "loading",
+      tokenBalance: 0,
     };
   }
   componentDidMount() {
@@ -149,10 +190,31 @@ class StatusPage extends React.Component {
     getLastCheckInDate().then(date => this.setState({ lastCheckInDate: date }));
     getWalletBalance().then(balance => this.setState({ walletBalance: balance }));
     getWalletAddress().then(address => this.setState({ walletAddress: address }));
+    seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" }));
     
   }
   render() {
+    const handleSendQtyChange = ({target}) => {
+      if (isNaN(target.value) || target.value < 0) return;
+      this.setState({ sendQty: target.value });
+    }
+    const onSend = () => {
+      if (isNaN(this.state.sendQty) || this.state.sendQty <= 0) return;
+      addTokens(this.state.sendQty).then(console.log).catch(console.error);
+    };
     return (<Stack spacing={2}>
+      <Box className="Card">
+        <Box sx={{margin: 1}} className="section-title">Tokens in Account: {this.state.tokenBalanceStatus === "ready" ? this.state.tokenBalance : <LinearProgress />}</Box>
+      </Box>
+      <Box className="Card">
+      <Box sx={{margin: 1}} className="section-title">Add Tokens</Box>
+      <Box sx={{margin: 1}}>
+        <OutlinedInput label="Quantity" type="number" value={this.state.sendQty} onChange={handleSendQtyChange} notched={false} endAdornment={<InputAdornment position="end">fdaix</InputAdornment>} sx={{ marginRight: 2 }} />
+        <Button variant="contained" size="large" endIcon={<Send />} disabled={isNaN(this.state.sendQty) || this.state.sendQty == 0} sx={{ borderRadius: 24 }} onClick={onSend}>
+          Send
+        </Button>
+      </Box>
+    </Box>
       <Box className="Card">
         {this.state.lastCheckInDate ? 
           <Box sx={{margin:1}}>
@@ -163,9 +225,9 @@ class StatusPage extends React.Component {
       </Box>
       <Box className="Card">
         <Box sx={{margin:1}}>
-          <Box className="section-title">Your Dribble Dapp Info</Box>
-          <p>This is your Dribble Dapp address: {this.state.walletAddress ? <>{this.state.walletAddress}</> : <LinearProgress />}</p>
-          <p>Dribble Dapp Balance: {this.state.walletBalance != null ? <>{this.state.walletBalance}  fdaix</> : <LinearProgress />}</p>
+          <Box className="section-title">Your Dribble DApp Info</Box>
+          <p>This is your Dribble DApp address: {this.state.walletAddress ? <>{this.state.walletAddress}</> : <LinearProgress />}</p>
+          <p>Dribble DApp Balance: {this.state.walletBalance != null ? <>{this.state.walletBalance}  fdaix</> : <LinearProgress />}</p>
         </Box>
       </Box>
     </Stack>);
@@ -178,9 +240,9 @@ class BeneficiaryPage extends React.Component {
     this.state = {
       beneficiaryAddressStatus: "loading",
       beneficiaryAddress: "",
-      schedule: "medium",
-      beneficaryScheduleStatus: "loading",
-      beneficarySchedule: "",
+      schedule: "MEDIUM",
+      i: "loading",
+      beneficiarySchedule: "",
     };
   }
   componentDidMount() {
@@ -192,42 +254,53 @@ class BeneficiaryPage extends React.Component {
     });
     getDispersementSchedule().then(schedule => {
       this.setState({
-        beneficaryScheduleStatus: "ready",
-        beneficarySchedule: schedule,
+        i: "ready",
+        beneficiarySchedule: schedule,
       });
     });
   }
   render() {
     const handleSchedule = (e, newSchedule) => {
       const oldSchedule = this.state.schedule;
-      this.setState({ beneficarySchedule: newSchedule });
+      this.setState({ beneficiarySchedule: newSchedule });
       sendDispersementSchedule(newSchedule).catch(error => {
-        this.setState({ beneficarySchedule: oldSchedule });
+        this.setState({ beneficiarySchedule: oldSchedule });
       });
     };
+    const updateBeneficary = (e) => {
+      this.setState({
+        beneficiaryAddress: e.target.value,
+        beneficiaryAddressStatus: "changed"
+      });
+    };
+    const clickUpdateBeneficiary = () => {
+      if (this.state.beneficiaryAddress.length != 42) return;
+      sendBeneficiaryAddress(this.state.beneficiaryAddress);
+    }
     return (<Stack spacing={2}>
       <Box className="Card">
         <Box className="section-title" sx={{ margin: 1}}>Update Beneficiary Address</Box>
-          {this.state.beneficiaryAddressStatus === "ready" ? 
+          {this.state.beneficiaryAddressStatus != "loading" ? 
             <>
               <Box sx={{ margin: 1}}>
                 <TextField
                   label="Beneficiary Address"
                   fullWidth
                   className="input-elements"
-                  disabled
+                  value={this.state.beneficiaryAddress}
+                  onChange={updateBeneficary}
                 /> 
               </Box>
               <Box sx={{ margin: 1}}>
-                <Button variant="contained" size="large" sx={{ borderRadius: 6 }}>
+                <Button variant="contained" size="large" sx={{ borderRadius: 6 }} disabled={this.state.beneficiaryAddress.length != 42 || this.state.beneficiaryAddressStatus != "changed"} onClick={clickUpdateBeneficiary}>
                   Update
                 </Button>
               </Box>
             </>
           : <LinearProgress />}
       </Box>
-      {this.state.beneficaryScheduleStatus === "ready" ? 
-        <DispersementSchedule value={this.state.beneficarySchedule} onChange={handleSchedule} /> :
+      {this.state.beneficiaryScheduleStatus != "loading" ? 
+        <DispersementSchedule value={this.state.beneficiarySchedule} onChange={handleSchedule} /> :
         <LinearProgress />
       }
       
@@ -235,25 +308,24 @@ class BeneficiaryPage extends React.Component {
   }
 };
 const DispersementSchedule = ({value, onChange}) => {
-  const dispersement = value === "fast" ? fastDispersement : ((value === "medium") ? mediumDispersement : slowDispersement);
+  const dispersement = value === "FAST" ? fastDispersement : ((value === "MEDIUM") ? mediumDispersement : slowDispersement);
   const years = R.repeat(0, (dispersement[dispersement.length-1].x)).map((_, year) => year);
-  console.log(years);
   
   return (
     <Box className="Card">
       <Box sx={{ margin: 1 }}>
         <Box className="section-title">Change Dispersement Schedule</Box>
         <ToggleButtonGroup value={value} exclusive className="dispersement-speed-selector" onChange={onChange}>
-          <ToggleButton value="slow">
+          <ToggleButton value="SLOW">
             Slow Dispersement
           </ToggleButton>
-          <ToggleButton value="medium">
+          <ToggleButton value="MEDIUM">
             Medium Dispersement
           </ToggleButton>
-          <ToggleButton value="fast">
+          <ToggleButton value="FAST">
             Fast Dispersement
           </ToggleButton>
-          <ToggleButton value="instant" disabled>
+          <ToggleButton value="INSTANT" disabled>
             Instant Dispersement
           </ToggleButton>
         </ToggleButtonGroup>
@@ -318,9 +390,9 @@ const Dashboard = () => {
 
 const LoginToMetamask = ({setLoggedInState}) => {
   return (<Box className="login-main-area">
-    <Box sx={{ margin: 1 }} className="login-header">Login to Dribble Dapp</Box>
+    <Box sx={{ margin: 1 }} className="login-header">Login to Dribble DApp</Box>
     <Box sx={{ margin: 1 }}>
-      Connect your Metamask wallet to use Dribble Dapp
+      Connect your Metamask wallet to use Dribble DApp
     </Box>
     <Button className="login-button" sx={{backgroundColor: "#e3d4bf", margin: 3 }} onClick={() => {
       setLoggedInState("loading");
@@ -360,7 +432,7 @@ class App extends React.Component {
       <div className="App">
         <ThemeProvider theme={theme}>
           <header>
-            <img src={logo} width="48" height="48" style={{bottom:-7, position: "relative", marginRight: 12}} />Dribble Dapp
+            <img src={logo} width="48" height="48" style={{bottom:-7, position: "relative", marginRight: 12}} />Dribble DApp
           </header>
           { this.state.loggedIn === "true" ? 
               <Dashboard /> :
