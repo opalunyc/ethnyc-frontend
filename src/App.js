@@ -96,7 +96,7 @@ const seeTokens = async (qty) => {
     daiAbi,
     signer,
   );
-  const result = (await daiContract.balanceOf(contractAddress)).div(1e9).div(1e9).toString();
+  const result = (await daiContract.balanceOf(contractAddress)).div(1e9).div(1e6).toNumber()/1000;
   console.log("dai result", result);
   return result;
 };
@@ -213,7 +213,7 @@ class StatusPage extends React.Component {
     getWalletAddress().then(address => this.setState({ walletAddress: address }));
     seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" }));
     getDispersementSchedule().then(schedule => this.setState({ schedule }));
-    this.interval = setInterval(() => seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" })), 1000);
+    this.interval = setInterval(() => seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" })), 500);
   }
   componentWillUnmount() {
     clearInterval(this.interval);
