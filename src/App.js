@@ -205,6 +205,7 @@ class BeneficiaryPage extends React.Component {
     };
     return (<Stack spacing={2}>
       <Box className="Card">
+        <Box className="section-title" sx={{ margin: 1}}>Update Beneficiary Address</Box>
           {this.state.beneficiaryAddressStatus === "ready" ? 
             <>
               <Box sx={{ margin: 1}}>
@@ -239,7 +240,7 @@ const DispersementSchedule = ({value, onChange}) => {
   return (
     <Box className="Card">
       <Box sx={{ margin: 1 }}>
-        <div className="section-title">Dispersement Schedule</div>
+        <Box className="section-title">Change Dispersement Schedule</Box>
         <ToggleButtonGroup value={value} exclusive className="dispersement-speed-selector" onChange={onChange}>
           <ToggleButton value="slow">
             Slow Dispersement
