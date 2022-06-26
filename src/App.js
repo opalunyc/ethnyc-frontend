@@ -14,7 +14,7 @@ import daiAbi from './daiAbi.json';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const contractAddress = "0xc261c333340f1565e57870b36f79BD5AFA06780d";
+const contractAddress = "0x65E662B45c030c0c0ef6fF865b70ce865B25a836";
 const daiContractAddress = "0x5D8B4C2554aeB7e86F387B4d6c00Ac33499Ed01f";
 const contractAbi = contract.abi;
 
@@ -111,6 +111,7 @@ const getWalletBalance = async () => {
   return 2000;
 };
 
+
 const getBeneficiaryAddress = async () => {
   const {ethereum} = window;
   if (!ethereum) return "";
@@ -146,27 +147,47 @@ const sendBeneficiaryAddress = async (address) => {
   console.log("set address?", result);
 }
 
-const getLastCheckInDate = async () => {
-  await sleep(10);
-  return Date.now();
-};
-
 const checkIn = async (address) => {
   await sleep(10);
   return Date.now();
 }
 
 const getDispersementSchedule = async () => {
-  await sleep(10);
-  return "MEDIUM";
+  const {ethereum} = window;
+  if (!ethereum) return "";
+  const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  const signer = provider.getSigner();
+  const ethersContract = new ethers.Contract(
+    contractAddress,
+    contractAbi,
+    signer,
+  );
+
+  console.log("getting dispersement schedule...");
+  console.log(ethersContract);
+  const schedule = await ethersContract.plan();
+
+  console.log("got schedule?", schedule);
+  return schedule;
 };
 
-const sendDispersementSchedule = async (plan) => {
-  await sleep(10);
-  return "MEDIUM";
+const sendDispersementSchedule = async (schedule) => {
+  const {ethereum} = window;
+  if (!ethereum) return "";
+  const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  const signer = provider.getSigner();
+  const ethersContract = new ethers.Contract(
+    contractAddress,
+    contractAbi,
+    signer,
+  );
+
+  console.log("setting beneficiary schedule...", schedule);
+  const result = await ethersContract.setPlan(schedule);
+  console.log("set schedule?", result);
 }
 
-const sendWithdrawal = async (address, amount) => {
+const sendTransferal = async (address, amount) => {
   await sleep(10);
 }
 
@@ -183,15 +204,19 @@ class StatusPage extends React.Component {
       sendQty: 0,
       tokenBalanceStatus: "loading",
       tokenBalance: 0,
+      schedule: null,
     };
   }
   componentDidMount() {
     // TODO: Add check in call
-    getLastCheckInDate().then(date => this.setState({ lastCheckInDate: date }));
     getWalletBalance().then(balance => this.setState({ walletBalance: balance }));
     getWalletAddress().then(address => this.setState({ walletAddress: address }));
     seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" }));
-    
+    getDispersementSchedule().then(schedule => this.setState({ schedule }));
+    this.interval = setInterval(() => seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" })), 1000);
+  }
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
   render() {
     const handleSendQtyChange = ({target}) => {
@@ -204,7 +229,7 @@ class StatusPage extends React.Component {
     };
     return (<Stack spacing={2}>
       <Box className="Card">
-        <Box sx={{margin: 1}} className="section-title">Tokens in Account: {this.state.tokenBalanceStatus === "ready" ? this.state.tokenBalance : <LinearProgress />}</Box>
+        <Box sx={{margin: 1}} className="section-title">Account Balance: {this.state.tokenBalanceStatus === "ready" ? this.state.tokenBalance + " fdaix" : <LinearProgress />}</Box>
       </Box>
       <Box className="Card">
       <Box sx={{margin: 1}} className="section-title">Add Tokens</Box>
@@ -216,18 +241,13 @@ class StatusPage extends React.Component {
       </Box>
     </Box>
       <Box className="Card">
-        {this.state.lastCheckInDate ? 
-          <Box sx={{margin:1}}>
-            <Box className="section-title">Check-in Status</Box>
-            <p>Your last check in was at {this.state.lastCheckInDate}.</p>
-            <p>You must check in again before {this.state.checkInBy} before dispersement begins.</p>
-          </Box> : <Skeleton animation="wave" />}
-      </Box>
-      <Box className="Card">
         <Box sx={{margin:1}}>
-          <Box className="section-title">Your Dribble DApp Info</Box>
-          <p>This is your Dribble DApp address: {this.state.walletAddress ? <>{this.state.walletAddress}</> : <LinearProgress />}</p>
-          <p>Dribble DApp Balance: {this.state.walletBalance != null ? <>{this.state.walletBalance}  fdaix</> : <LinearProgress />}</p>
+          <Box className="section-title">Check-in Status</Box>
+          <p>You are checked in!</p>
+          { this.state.schedule != null ? 
+            <p>You must check in within {this.state.plan === "LONG" ? "18 months" : (this.state.plan === "MEDIUM" ? "12 months" : "6 months") } before dispersement begins.</p>
+            : <></>
+          }
         </Box>
       </Box>
     </Stack>);
@@ -308,7 +328,7 @@ class BeneficiaryPage extends React.Component {
   }
 };
 const DispersementSchedule = ({value, onChange}) => {
-  const dispersement = value === "FAST" ? fastDispersement : ((value === "MEDIUM") ? mediumDispersement : slowDispersement);
+  const dispersement = value === "SHORT" ? fastDispersement : ((value === "MEDIUM") ? mediumDispersement : slowDispersement);
   const years = R.repeat(0, (dispersement[dispersement.length-1].x)).map((_, year) => year);
   
   return (
@@ -316,13 +336,13 @@ const DispersementSchedule = ({value, onChange}) => {
       <Box sx={{ margin: 1 }}>
         <Box className="section-title">Change Dispersement Schedule</Box>
         <ToggleButtonGroup value={value} exclusive className="dispersement-speed-selector" onChange={onChange}>
-          <ToggleButton value="SLOW">
+          <ToggleButton value="LONG">
             Slow Dispersement
           </ToggleButton>
           <ToggleButton value="MEDIUM">
             Medium Dispersement
           </ToggleButton>
-          <ToggleButton value="FAST">
+          <ToggleButton value="SHORT">
             Fast Dispersement
           </ToggleButton>
           <ToggleButton value="INSTANT" disabled>
@@ -343,10 +363,10 @@ const DispersementSchedule = ({value, onChange}) => {
   );
 };
 
-const WithdrawPage = () => {
+const TransferPage = () => {
   return (<Stack spacing={2}>
     <Box className="Card">
-      <Box sx={{margin: 1}} className="section-title">Withdraw</Box>
+      <Box sx={{margin: 1}} className="section-title">Transfer</Box>
       <Box sx={{margin: 1}}>
         <TextField
           label="Recipient Wallet Address"
@@ -375,14 +395,14 @@ const Dashboard = () => {
       <TabContext value={tabValue}>
         <Box>
           <Tabs value={tabValue} onChange={handleTabChange}>
-            <Tab label="Home" value="0" /> 
+            <Tab label="Account" value="0" /> 
             <Tab label="Beneficiary Info" value="1" /> 
-            <Tab label="Withdraw" value="2"/> 
+            <Tab label="Transfer" value="2"/> 
           </Tabs>
         </Box>
         <TabPanel value="0"><StatusPage /></TabPanel>
         <TabPanel value="1"><BeneficiaryPage /></TabPanel>
-        <TabPanel value="2"><WithdrawPage /></TabPanel>
+        <TabPanel value="2"><TransferPage /></TabPanel>
       </TabContext>
     </Box>
   );
@@ -390,9 +410,9 @@ const Dashboard = () => {
 
 const LoginToMetamask = ({setLoggedInState}) => {
   return (<Box className="login-main-area">
-    <Box sx={{ margin: 1 }} className="login-header">Login to Dribble DApp</Box>
+    <Box sx={{ margin: 1 }} className="login-header">Login to Dribble</Box>
     <Box sx={{ margin: 1 }}>
-      Connect your Metamask wallet to use Dribble DApp
+      Connect your Metamask wallet to use Dribble
     </Box>
     <Button className="login-button" sx={{backgroundColor: "#e3d4bf", margin: 3 }} onClick={() => {
       setLoggedInState("loading");
@@ -432,7 +452,7 @@ class App extends React.Component {
       <div className="App">
         <ThemeProvider theme={theme}>
           <header>
-            <img src={logo} width="48" height="48" style={{bottom:-7, position: "relative", marginRight: 12}} />Dribble DApp
+            <img src={logo} width="48" height="48" style={{bottom:-7, position: "relative", marginRight: 11}} />dribble
           </header>
           { this.state.loggedIn === "true" ? 
               <Dashboard /> :
