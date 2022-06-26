@@ -1,5 +1,7 @@
+
 .App {
   text-align: center;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .App-logo {
@@ -39,9 +41,14 @@
 
 .Card {
   padding: 8px;
+  backdrop-filter: blur(48px);
+  background-color: rgba(0,0,0,0%);
+  border-radius: 24px;
+  font-family: 'Roboto Mono', monospace;;
 }
 
 .App {
+  color: white;
   height: 100%;
   max-width: 800px;
   margin-right: auto;
@@ -52,26 +59,35 @@
   border: 3px black solid;
 }
 
-.main-area {
-  text-align: left;
-  padding: 10px;
-  background-color: white;
-  border-radius: 10px;
+.blur-background {
+  backdrop-filter: blur(48px);
+  background-color: rgba(0,0,0,75%);
 }
 
+.main-area {
+  color: white;
+  text-align: left;
+  padding: 10px;
+  border-radius: 48px;
+}
+
+  
 .login-main-area {
+  color: white;
   text-align: center;
   padding: 10px;
-  background-color: white;
+  background-color: black;
   border-radius: 10px;
 }
 
 .login-header {
+  color: white;
   font-size: 20px;
   font-weight: bold;
 }
 
 .section-title {
+  color: white;
   font-size: larger;
   margin-bottom: 8px;
   margin-top: 12px;
