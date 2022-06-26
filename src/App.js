@@ -31,7 +31,7 @@ const theme = createTheme({
 const ethInAccount = 1500;
 const fastDispersement = [...R.repeat(0, 54).map((_, x) => Math.pow((x+1)/54, 3))].map((x, mo) => ({x: (mo+7)/12, y: x * ethInAccount }));
 const mediumDispersement = [...R.repeat(0, 108).map((_, x) => Math.pow((x+1)/108, 3))].map((x, mo) => ({x: (mo+13)/12, y: x * ethInAccount }));
-const slowDispersement = [...R.repeat(0, 162).map((_, x) => Math.pow((x+1)/162, 3))].map((x, mo) => ({x: (mo+19)/12, y: x * ethInAccount }));
+const slowDispersement = [...R.repeat(0, 216).map((_, x) => Math.pow((x+1)/216, 3))].map((x, mo) => ({x: (mo+25)/12, y: x * ethInAccount }));
 
 const isWalletConnected = async () => {
   try {
@@ -245,7 +245,7 @@ class StatusPage extends React.Component {
           <Box className="section-title">Check-in Status</Box>
           <p>You are checked in!</p>
           { this.state.schedule != null ? 
-            <p>You must check in within {this.state.plan === "LONG" ? "18 months" : (this.state.plan === "MEDIUM" ? "12 months" : "6 months") } before dispersement begins.</p>
+            <p>You must check in within {this.state.schedule === "LONG" ? "24 months" : (this.state.schedule === "MEDIUM" ? "12 months" : "6 months") } before dispersement begins.</p>
             : <></>
           }
         </Box>
