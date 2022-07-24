@@ -2,21 +2,17 @@ import './App.css';
 import logo from './assets/logo.png';
 import metamaskFox from './assets/MetaMask_Fox.png';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Box, Button, Card, InputAdornment, TextField, Stack, Tab, Tabs, ToggleButtonGroup, ToggleButton, Tooltip, OutlinedInput, Skeleton, LinearProgress } from '@mui/material';
+import { Box, Button, Card, InputAdornment, TextField, Stack, OutlinedInput, Skeleton, LinearProgress } from '@mui/material';
 import { Send } from '@mui/icons-material';
-import { TabContext, TabPanel } from '@mui/lab';
-import { CartesianGrid, XAxis, YAxis, Scatter, ScatterChart, ResponsiveContainer } from 'recharts';
 import * as R from 'ramda';
-import React, { useState } from 'react';
+import React from 'react';
 import { ethers } from 'ethers';
-import contract from "./contract.json";
 import daiAbi from './daiAbi.json';
+import { daiContractAddress, contractAddress, contractAbi } from './constants/contractAddress';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { DisbursementSchedule } from './components/DisbursementSchedule/DisbursementSchedule';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-const contractAddress = "0x65E662B45c030c0c0ef6fF865b70ce865B25a836";
-const daiContractAddress = "0x5D8B4C2554aeB7e86F387B4d6c00Ac33499Ed01f";
-const contractAbi = contract.abi;
 
 const theme = createTheme({
   typography: {
@@ -29,9 +25,9 @@ const theme = createTheme({
 });
 
 const ethInAccount = 1500;
-const fastDispersement = [...R.repeat(0, 54).map((_, x) => Math.pow((x + 1) / 54, 3))].map((x, mo) => ({ x: (mo + 7) / 12, y: x * ethInAccount }));
-const mediumDispersement = [...R.repeat(0, 108).map((_, x) => Math.pow((x + 1) / 108, 3))].map((x, mo) => ({ x: (mo + 13) / 12, y: x * ethInAccount }));
-const slowDispersement = [...R.repeat(0, 216).map((_, x) => Math.pow((x + 1) / 216, 3))].map((x, mo) => ({ x: (mo + 25) / 12, y: x * ethInAccount }));
+export const fastDisbursement = [...R.repeat(0, 54).map((_, x) => Math.pow((x + 1) / 54, 3))].map((x, mo) => ({ x: (mo + 7) / 12, y: x * ethInAccount }));
+export const mediumDisbursement = [...R.repeat(0, 108).map((_, x) => Math.pow((x + 1) / 108, 3))].map((x, mo) => ({ x: (mo + 13) / 12, y: x * ethInAccount }));
+export const slowDisbursement = [...R.repeat(0, 216).map((_, x) => Math.pow((x + 1) / 216, 3))].map((x, mo) => ({ x: (mo + 25) / 12, y: x * ethInAccount }));
 
 const isWalletConnected = async () => {
   try {
@@ -152,47 +148,49 @@ const checkIn = async (address) => {
   return Date.now();
 }
 
-const getDispersementSchedule = async () => {
-  const { ethereum } = window;
-  if (!ethereum) return "";
-  const provider = new ethers.providers.Web3Provider(ethereum, "any");
-  const signer = provider.getSigner();
-  const ethersContract = new ethers.Contract(
-    contractAddress,
-    contractAbi,
-    signer,
-  );
+const getDisbursementSchedule = async () => {
+  // const { ethereum } = window;
+  // if (!ethereum) return "";
+  // const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  // const signer = provider.getSigner();
+  // const ethersContract = new ethers.Contract(
+  //   contractAddress,
+  //   contractAbi,
+  //   signer,
+  // );
 
-  console.log("getting dispersement schedule...");
-  console.log(ethersContract);
-  const schedule = await ethersContract.plan();
+  // console.log("getting disbursement schedule...");
+  // console.log(ethersContract);
+  // const schedule = await ethersContract.plan();
 
-  console.log("got schedule?", schedule);
-  return schedule;
+  // console.log("got schedule?", schedule);
+  // return schedule;
 };
 
-const sendDispersementSchedule = async (schedule) => {
-  const { ethereum } = window;
-  if (!ethereum) return "";
-  const provider = new ethers.providers.Web3Provider(ethereum, "any");
-  const signer = provider.getSigner();
-  const ethersContract = new ethers.Contract(
-    contractAddress,
-    contractAbi,
-    signer,
-  );
+const sendDisbursementSchedule = async (schedule) => {
 
-  console.log("setting beneficiary schedule...", schedule);
-  const result = await ethersContract.setPlan(schedule);
-  console.log("set schedule?", result);
+  console.log(schedule);
+
+  //Delete THis Function as the user will not be able to edit the Disbursement schedule unless they
+  //create a new Dribble. 
+
+  // const { ethereum } = window;
+  // if (!ethereum) return "";
+  // const provider = new ethers.providers.Web3Provider(ethereum, "any");
+  // const signer = provider.getSigner();
+  // const ethersContract = new ethers.Contract(
+  //   contractAddress,
+  //   contractAbi,
+  //   signer,
+  // );
+
+  // console.log("setting beneficiary schedule...", schedule);
+  // const result = await ethersContract.setPlan(schedule);
+  // console.log("set schedule?", result);
 }
 
-const sendTransferal = async (address, amount) => {
-  await sleep(10);
-}
 
-
-class StatusPage extends React.Component {
+export class StatusPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -212,7 +210,7 @@ class StatusPage extends React.Component {
     getWalletBalance().then(balance => this.setState({ walletBalance: balance }));
     getWalletAddress().then(address => this.setState({ walletAddress: address }));
     seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" }));
-    getDispersementSchedule().then(schedule => this.setState({ schedule }));
+    getDisbursementSchedule().then(schedule => this.setState({ schedule }));
     this.interval = setInterval(() => seeTokens().then(qty => this.setState({ tokenBalance: qty, tokenBalanceStatus: "ready" })), 500);
   }
   componentWillUnmount() {
@@ -245,7 +243,7 @@ class StatusPage extends React.Component {
           <Box className="section-title">Check-in Status</Box>
           <p>You are checked in!</p>
           {this.state.schedule != null ?
-            <p>You must check in within {this.state.schedule === "LONG" ? "24 months" : (this.state.schedule === "MEDIUM" ? "12 months" : "6 months")} before dispersement begins.</p>
+            <p>You must check in within {this.state.schedule === "LONG" ? "24 months" : (this.state.schedule === "MEDIUM" ? "12 months" : "6 months")} before disbursement begins.</p>
             : <></>
           }
         </Box>
@@ -254,7 +252,7 @@ class StatusPage extends React.Component {
   };
 };
 
-class BeneficiaryPage extends React.Component {
+export class BeneficiaryPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -272,7 +270,7 @@ class BeneficiaryPage extends React.Component {
         beneficiaryAddress: address,
       });
     });
-    getDispersementSchedule().then(schedule => {
+    getDisbursementSchedule().then(schedule => {
       this.setState({
         i: "ready",
         beneficiarySchedule: schedule,
@@ -283,7 +281,7 @@ class BeneficiaryPage extends React.Component {
     const handleSchedule = (e, newSchedule) => {
       const oldSchedule = this.state.schedule;
       this.setState({ beneficiarySchedule: newSchedule });
-      sendDispersementSchedule(newSchedule).catch(error => {
+      sendDisbursementSchedule(newSchedule).catch(error => {
         this.setState({ beneficiarySchedule: oldSchedule });
       });
     };
@@ -320,92 +318,12 @@ class BeneficiaryPage extends React.Component {
           : <LinearProgress />}
       </Box>
       {this.state.beneficiaryScheduleStatus != "loading" ?
-        <DispersementSchedule value={this.state.beneficiarySchedule} onChange={handleSchedule} /> :
+        <DisbursementSchedule value={this.state.beneficiarySchedule} onChange={handleSchedule} /> :
         <LinearProgress />
       }
 
     </Stack>);
   }
-};
-const DispersementSchedule = ({ value, onChange }) => {
-  const dispersement = value === "SHORT" ? fastDispersement : ((value === "MEDIUM") ? mediumDispersement : slowDispersement);
-  const years = R.repeat(0, (dispersement[dispersement.length - 1].x)).map((_, year) => year);
-
-  return (
-    <Box className="Card">
-      <Box sx={{ margin: 1 }}>
-        <Box className="section-title">Change Dispersement Schedule</Box>
-        <ToggleButtonGroup value={value} exclusive className="dispersement-speed-selector" onChange={onChange}>
-          <ToggleButton value="LONG">
-            Slow Dispersement
-          </ToggleButton>
-          <ToggleButton value="MEDIUM">
-            Medium Dispersement
-          </ToggleButton>
-          <ToggleButton value="SHORT">
-            Fast Dispersement
-          </ToggleButton>
-          <ToggleButton value="INSTANT" disabled>
-            Instant Dispersement
-          </ToggleButton>
-        </ToggleButtonGroup>
-        <ResponsiveContainer width="100%" height={300}>
-          <ScatterChart width={600} height={300} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-            <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-            <XAxis dataKey="x" type="number" scale="linear" name="years" unit=" years" range={[0, dispersement.length / 12]} allowDecimals={false} ticks={years} />
-            <YAxis yAxisId="qty" dataKey="y" type="number" scale="linear" name="eth" unit=" fdaix" width={100} range={[0, 'dataMax']} allowDecimals={false} />
-            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-            <Scatter yAxisId="qty" name="Dispersement Schedule" data={dispersement} fill="#8884d8" line />
-          </ScatterChart>
-        </ResponsiveContainer>
-      </Box>
-    </Box>
-  );
-};
-
-const TransferPage = () => {
-  return (<Stack spacing={2}>
-    <Box className="Card">
-      <Box sx={{ margin: 1 }} className="section-title">Transfer</Box>
-      <Box sx={{ margin: 1 }}>
-        <TextField
-          label="Recipient Wallet Address"
-          fullWidth
-        />
-      </Box>
-      <Box sx={{ margin: 1 }}>
-        <OutlinedInput label="Quantity" type="number" notched={false} endAdornment={<InputAdornment position="end">fdaix</InputAdornment>} />
-      </Box>
-      <Box sx={{ margin: 1 }}>
-        <Button variant="contained" size="large" endIcon={<Send />} disabled sx={{ borderRadius: 24 }}>
-          Send
-        </Button>
-      </Box>
-    </Box>
-  </Stack>);
-}
-
-
-const Dashboard = () => {
-  const [tabValue, setTabValue] = useState("0");
-  const handleTabChange = (_, newValue) => setTabValue(newValue);
-  const tab = "0";
-  return (
-    <Box className="main-area blur-background">
-      <TabContext value={tabValue}>
-        <Box>
-          <Tabs value={tabValue} onChange={handleTabChange}>
-            <Tab label="Account" value="0" />
-            <Tab label="Beneficiary Info" value="1" />
-            <Tab label="Transfer" value="2" />
-          </Tabs>
-        </Box>
-        <TabPanel value="0"><StatusPage /></TabPanel>
-        <TabPanel value="1"><BeneficiaryPage /></TabPanel>
-        <TabPanel value="2"><TransferPage /></TabPanel>
-      </TabContext>
-    </Box>
-  );
 };
 
 const LoginToMetamask = ({ setLoggedInState }) => {
