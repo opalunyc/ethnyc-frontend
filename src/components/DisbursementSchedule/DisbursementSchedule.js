@@ -11,7 +11,7 @@ export const DisbursementSchedule = ({ value, onChange }) => {
     return (
         <Box className="Card">
             <Box sx={{ margin: 1 }}>
-                <Box className="section-title">Change Disbursement Schedule</Box>
+                <Box className="section-title">Disbursement Schedule</Box>
                 <ToggleButtonGroup value={value} exclusive className="disbursement-speed-selector" onChange={onChange}>
                     <ToggleButton value="LONG">
                         Slow Disbursement

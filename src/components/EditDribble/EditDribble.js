@@ -1,4 +1,4 @@
-import { Box, Button, TextField, Stack, LinearProgress } from '@mui/material';
+import { Box, Button, ToggleButtonGroup, ToggleButton, TextField, Stack, LinearProgress } from '@mui/material';
 import React from 'react';
 import { DisbursementSchedule } from '../DisbursementSchedule/DisbursementSchedule';
 import { getBeneficiaryAddress, getDisbursementSchedule, sendDisbursementSchedule, sendBeneficiaryAddress } from '../../App';
@@ -47,16 +47,40 @@ export class EditDribble extends React.Component {
                             value={this.state.beneficiaryAddress}
                             onChange={updateBeneficary} />
                     </Box>
-                    <Box sx={{ margin: 1 }}>
+                    {/* <Box sx={{ margin: 1 }}>
                         <Button variant="contained" size="large" sx={{ borderRadius: 6 }} disabled={this.state.beneficiaryAddress.length != 42 || this.state.beneficiaryAddressStatus != "changed"} onClick={clickUpdateBeneficiary}>
                             Update
                         </Button>
-                    </Box>
+                    </Box> */}
                 </>
+
+                <Box className="section-title" sx={{ margin: 1 }}>Check-In Cadence</Box>
+                <ToggleButtonGroup exclusive className="disbursement-speed-selector" >
+                    <ToggleButton value="MINUTE">
+                        1 Minute
+                    </ToggleButton>
+                    <ToggleButton value="HOUR">
+                        1 Hour
+                    </ToggleButton>
+                    <ToggleButton value="DAY">
+                        1 Day
+                    </ToggleButton>
+                    <ToggleButton value="MONTH">
+                        1 Month
+                    </ToggleButton>
+                    <ToggleButton value="YEAR">
+                        1 Year
+                    </ToggleButton>
+                </ToggleButtonGroup>
+
+                {this.state.beneficiaryScheduleStatus != "loading" ?
+                    <DisbursementSchedule value={this.state.beneficiarySchedule} onChange={handleSchedule} /> :
+                    <LinearProgress />}
+
+                <Button variant="outlined">Create Dribble</Button>
+
             </Box>
-            {this.state.beneficiaryScheduleStatus != "loading" ?
-                <DisbursementSchedule value={this.state.beneficiarySchedule} onChange={handleSchedule} /> :
-                <LinearProgress />}
+
 
 
 

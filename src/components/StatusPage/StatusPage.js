@@ -34,7 +34,7 @@ export class StatusPage extends React.Component {
                 <Box sx={{ margin: 1 }}>
                     <OutlinedInput label="Quantity" type="number" value={this.state.sendQty} onChange={handleSendQtyChange} notched={false} endAdornment={<InputAdornment position="end">fdaix</InputAdornment>} sx={{ marginRight: 2 }} />
                     <Button variant="contained" size="large" endIcon={<Send />} disabled={isNaN(this.state.sendQty) || this.state.sendQty == 0} sx={{ borderRadius: 24 }} onClick={onSend}>
-                        Send
+                        Deposit
                     </Button>
                 </Box>
             </Box>
